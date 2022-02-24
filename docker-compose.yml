@@ -1,0 +1,45 @@
+version: "3.6"
+
+
+services:
+  jupyterlab:
+    image: jupyter/pyspark-notebook
+    container_name: jupyterlab
+    environment:
+      - JUPYTER_ENABLE_LAB=yes
+    ports:
+      - 8888:8888
+    volumes:
+      - ./:/home/jovyan
+    networks:
+      - localnet
+
+  spark-master:
+    image: bde2020/spark-master
+    container_name: spark-master
+    ports:
+      - 8080:8080
+      - 7077:7077
+    volumes:
+      - ./:/work/
+    networks:
+      - localnet
+
+ 
+  
+  # MongoDB Replica Set
+  mongo1:
+    image: "mongo:latest"
+    container_name: mongo1
+    volumes:
+      - ./dataDb:/data/db
+    networks:
+      - localnet
+    ports:
+      - "27017:27017"
+    restart: always
+ 
+
+networks:
+    localnet:
+        attachable: true
