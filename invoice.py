@@ -17,7 +17,7 @@ class Invoice:
         self.spark = SparkSession.\
         builder.\
         appName("pyspark-notebook2").\
-        master("spark://spark-master:7077").\
+        master("local").\
         config("spark.executor.memory", "1g").\
         config("spark.mongodb.input.uri",uri).\
         config("spark.mongodb.output.uri",uri).\
@@ -94,7 +94,7 @@ class Invoice:
         for col in invoices.collect():
             customerID =col["CustomerID"]
 
-        print("L'Id du client qui a depensé le plus est {} et a depensé {} ".format(customerID, value))
+        print("L'Id du client qui a depensé le plus est {} ".format(customerID))
         return customerID
 
 
