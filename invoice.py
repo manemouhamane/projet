@@ -107,7 +107,7 @@ class Invoice:
     
         invoices = self.spark.sql("select StockCode, Country, count(*) as total from invoices group by StockCode, Country" )
         invoices.show()
-        country=self.spark.sql("  select b.StockCode, (b.total/i.total) as repartition   from (select  Country, count(*) as total from invoices group by  Country) i,(select StockCode, Country, count(*) as total from invoices group by StockCode, Country) b where b.Country=i.Country" )
+        country=self.spark.sql("  select b.StockCode, (b.total/i.total) as repartition,i.total, b.Country   from (select StockCode, Country, count(*) as total from invoices group by StockCode, Country) b,  (select  Country, count(*) as total from invoices group by  Country) i  where b.Country=i.Country" )
         country.show()
         #invoices.write.format("mongo").mode("append").option("database","nameDataBasetest").option("collection", "nameCollectiontest").save()
         return invoices
@@ -117,6 +117,9 @@ class TestInvoice(unittest.TestCase):
     
     def test_insertDatabase(self):
         myclient = pymongo.MongoClient("mongodb://mongo1:27017")
+        mydb = myclient["nameDataBasetest"]
+        mycol = mydb["nameCollectiontest"]
+        mycol.drop()
         mydb = myclient["baseInvoice"]
         mycol = mydb["invoices"]
         mycol.drop()
