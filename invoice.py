@@ -96,7 +96,21 @@ class Invoice:
 
         print("L'Id du client qui a depensé le plus est {} ".format(customerID))
         return customerID
-
+    
+    def showingDistributionEachProductEachAvailableCountries(self,uri):
+        """
+        Cette methode permet de retourner l'id du client qui a depensé le plus
+        """
+        invoices = self.spark.read.format("mongo").option("uri",uri).load()
+        invoices.createOrReplaceTempView('invoices')
+    
+    
+        invoices = self.spark.sql("select StockCode, Country, count(*) as total from invoices group by StockCode, Country" )
+        invoices.show()
+        country=self.spark.sql("  select b.StockCode, (b.total/i.total) as repartition   from (select  Country, count(*) as total from invoices group by  Country) i,(select StockCode, Country, count(*) as total from invoices group by StockCode, Country) b where b.Country=i.Country" )
+        country.show()
+        #invoices.write.format("mongo").mode("append").option("database","nameDataBasetest").option("collection", "nameCollectiontest").save()
+        return invoices
 
 class TestInvoice(unittest.TestCase):
   
@@ -120,13 +134,19 @@ class TestInvoice(unittest.TestCase):
     def test_whichProductSoldTheMost(self):
         Invoice.__init__(self,"Online Retail.xlsx","mongodb://mongo1:27017")
         self.assertEqual(Invoice.whichCustomerSpentTheMostMoney(self,"mongodb://mongo1:27017/baseInvoice.invoices"),14646.0)
+    
+    def test_showingDistributionEachProductEachAvailableCountries(self):
+        Invoice.__init__(self,"Online Retail.xlsx","mongodb://mongo1:27017")
+        self.assertNotEqual(Invoice.showingDistributionEachProductEachAvailableCountries(self,"mongodb://mongo1:27017/baseInvoice.invoices"),None)
+
         
 if __name__ == "__main__":
-    #unittest.main()
-    
+    unittest.main()
+    """
     Invoice = Invoice("Online Retail.xlsx","mongodb://mongo1:27017")
-    Invoice.insertDatabase("baseInvoice","invoices")
-    Invoice.groupAllTransactionsByInvoice("mongodb://mongo1:27017/baseInvoice.invoices")
-    Invoice.whichProductSoldTheMost("mongodb://mongo1:27017/baseInvoice.invoices")
-    Invoice.whichCustomerSpentTheMostMoney("mongodb://mongo1:27017/baseInvoice.invoices")
-    
+    #Invoice.insertDatabase("baseInvoice","invoices")
+    #Invoice.groupAllTransactionsByInvoice("mongodb://mongo1:27017/baseInvoice.invoices")
+    #Invoice.whichProductSoldTheMost("mongodb://mongo1:27017/baseInvoice.invoices")
+    #Invoice.whichCustomerSpentTheMostMoney("mongodb://mongo1:27017/baseInvoice.invoices")
+    Invoice.showingDistributionEachProductEachAvailableCountries("mongodb://mongo1:27017/baseInvoice.invoices")
+    """
