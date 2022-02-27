@@ -52,7 +52,7 @@ class Invoice:
         """
         invoices = self.spark.read.format("mongo").option("uri",uri).load()
         invoices.createOrReplaceTempView('invoices')
-        invoices = self.spark.sql("SELECT InvoiceNo, count(*) FROM invoices group by InvoiceNo")
+        invoices = self.spark.sql("SELECT InvoiceNo, count(*) as nombreTransaction FROM invoices group by InvoiceNo")
         print(" Le nombre de transaction par facture")
         invoices.show()
         return invoices
@@ -99,18 +99,15 @@ class Invoice:
     
     def showingDistributionEachProductEachAvailableCountries(self,uri):
         """
-        Cette methode permet de retourner l'id du client qui a depensé le plus
+        Cette methode permet de retourner une collectioon de repartition de produit dans le pays
         """
-        invoices = self.spark.read.format("mongo").option("uri",uri).load()
-        invoices.createOrReplaceTempView('invoices')
-    
-    
-        invoices = self.spark.sql("select StockCode, Country, count(*) as total from invoices group by StockCode, Country" )
-        invoices.show()
-        country=self.spark.sql("  select b.StockCode, (b.total/i.total) as repartition,i.total, b.Country   from (select StockCode, Country, count(*) as total from invoices group by StockCode, Country) b,  (select  Country, count(*) as total from invoices group by  Country) i  where b.Country=i.Country" )
+        country = self.spark.read.format("mongo").option("uri",uri).load()
+        country.createOrReplaceTempView('invoices')
+        
+        country=self.spark.sql("  select b.StockCode, ((b.total*100)/i.total) as repartition,b.total as totalStockCode, i.total  as totalCountry, b.Country   from (select StockCode, Country, count(*) as total from invoices group by StockCode, Country) b,  (select  Country, count(*) as total from invoices group by  Country) i  where b.Country=i.Country" )
         country.show()
-        #invoices.write.format("mongo").mode("append").option("database","nameDataBasetest").option("collection", "nameCollectiontest").save()
-        return invoices
+        country.write.format("mongo").mode("append").option("database","nameDataBasetest").option("collection", "nameCollectiontest").save()
+        return country
 
 class TestInvoice(unittest.TestCase):
   
